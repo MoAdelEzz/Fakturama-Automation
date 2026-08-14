@@ -10,12 +10,6 @@ class OrderItem:
     product: Product
     quantity: int
 
-    def resolve_fields(self) -> dict[str, Any]:
-        return {
-            "Product": self.product.sku,
-            "VAT": self.product.vat.percentage,
-        }
-
 @dataclass
 class Order:
     external_reference: str

@@ -99,6 +99,46 @@ class FakturamaWindow:
             f"not found for '{field_name}'"
         )
     
+
+    def edit_combobox_node(
+        self,
+        target,
+        value: str,
+    ) -> None:
+        target.Click()
+        
+        target.SendKeys(value)
+
+        # Select the desired item
+        item = target.ListItemControl(
+            RegexName=rf"{re.escape(value)}",
+            searchDepth=10,
+        )
+
+        if item.Exists(3):
+            item.Click()
+            return
+
+        raise RuntimeError(
+            f"Combo box option '{value}' "
+            f"not found"
+        )
+    
+    
+    def click_button(self, button_name):
+        target = self.element.ButtonControl(
+            Name=button_name,
+            searchDepth=30,
+        )
+
+        if not target.Exists(5):
+            raise RuntimeError(
+                f"Combo box '{button_name}' "
+                f"not found in window"
+            )
+
+        target.Click()
+        
     def get_fields(self, label_name: str, count: int):
         label = self.element.TextControl(Name=label_name, searchDepth=30)
         if not label.Exists(5):
@@ -166,9 +206,9 @@ class FakturamaWindow:
             selection = control.GetSelectionItemPattern()
 
             if selection and selection.IsSelected:
-                return control
+                return True
 
-        return None
+        return False
     
     def save(self):
         target = self.element.ButtonControl(
@@ -196,9 +236,9 @@ class FakturamaWindow:
     def open_sidebar_item(self, name: str) -> None:
         self.focus()
         
-        target = self.is_tab_opened(name)
+        isOpen = self.is_tab_opened(name)
         
-        if target is not None:
+        if isOpen == True:
             return
 
         control = self.element.TextControl(

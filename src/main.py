@@ -5,19 +5,16 @@ from src.entities.VATs import VATsUI
 from src.entities.payment_methods import PaymentMethodUI
 from src.entities.products import ProductsUI
 from src.workflows.entity import EntityWorkflow
+from src.workflows.order_creation import OrderCreationWorkflow
 load_dotenv()
 
 from datetime import date
-
 from .models.vat import VAT
 from .models.payment_method import PaymentMethod
 from .models.debtor import Debtor
 from .models.product import Product
 from .models.order import Order, OrderItem
-
 from .ui.app import FakturamaApp
-from .ui.sidebar import Sidebar
-from .ui.payment_methods import PaymentMethodUIA
 
 
 def create_mock_order() -> Order:
@@ -116,6 +113,9 @@ def main():
     
     for workflow in workflows:
         workflow.run()
+    
+    orderWorkflow = OrderCreationWorkflow(window, order)
+    orderWorkflow.run()
 
 
 if __name__ == "__main__":

@@ -59,7 +59,11 @@ class FakturamaEntityUI(ABC):
         search.SendKeys("{CTRL}A")
         search.SendKeys(self.search_value())
 
-        return self.count_table_rows()
+        try:
+            return self.count_table_rows()
+        except:
+            print("Failed To Count Table Rows, Falling Back To Default Creation Process")
+            return 0
 
     def _table(self):
         tab = self.window.element.TabControl(
@@ -121,7 +125,7 @@ class FakturamaEntityUI(ABC):
             bbox=(left, top, right, bottom)
         )
         
-        image.save("debug-payment-methods.png")
+        # image.save("debug/debug-payment-methods.png")
         
         return image
 
