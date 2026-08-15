@@ -3,7 +3,6 @@ from typing import Callable, Generic, TypeVar
 from src.entities.base import FakturamaEntityUI
 from src.ui.window import FakturamaWindow
 
-
 T = TypeVar("T")
 UI = TypeVar("UI", bound=FakturamaEntityUI)
 
@@ -24,16 +23,12 @@ class EntityWorkflow(Generic[T, UI]):
 
         count = self.ui.search()
 
-        if count == 1:
+        # This entry has matches in the table, so we do nothing and terminate this workflow
+        if count > 0:
             self.ui.resetWindow()
             return
 
-        if count > 1:
-            raise RuntimeError(
-                f"Multiple records found "
-                f"for '{self.ui.data.description}' ({count})"
-            )
-
+        # If no rows were found, we create a new record for this entry
         self.ui.open_create_form()
         self.ui.fill_form()
         self.ui.save()

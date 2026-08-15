@@ -1,6 +1,7 @@
 from src.models.vat import VAT
 from .base import FakturamaEntityUI
 
+
 class VATsUI(FakturamaEntityUI):
     @property
     def footer_tab_name(self) -> str:
@@ -13,34 +14,33 @@ class VATsUI(FakturamaEntityUI):
     @property
     def creation_tab_name(self) -> str:
         return "New TAX Rate"
-    
-    def _parse_data(self):
+
+    def _resolve_fields(self) -> dict[str, str]:
         data: VAT | None = self.data
-        name = data.name if data is not None else "Tax-free"
-        description = name if data is not None else "Free of Tax"
-        
-        return name, description
-        
+        if data is None:
+            return VAT.tax_free_resolve_fields()
+        return data.resolve_fields()
+
     def search_value(self) -> str:
-        name, description = self._parse_data()
-        return f"{name} {description}"
+        data: VAT | None = self.data
+        if data is None:
+            return VAT.tax_free_search_query()
+        return data.search_query()
 
     def fill_form(self):
-        name, description = self._parse_data()
+        fields = self._resolve_fields()
 
         self.window.edit_text_field(
             field_name="Name",
-            value=name,
+            value=fields["Name"],
         )
 
         self.window.edit_text_field(
             field_name="Description",
-            value=name,
+            value=fields["Description"],
         )
 
         self.window.edit_text_field(
             field_name="Value",
-            value=description,
+            value=fields["Value"],
         )
-
-        self.window.save()

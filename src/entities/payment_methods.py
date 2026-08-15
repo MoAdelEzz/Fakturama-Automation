@@ -1,4 +1,6 @@
+from src.models.payment import PaymentMethod
 from .base import FakturamaEntityUI
+
 
 class PaymentMethodUI(FakturamaEntityUI):
     @property
@@ -14,22 +16,27 @@ class PaymentMethodUI(FakturamaEntityUI):
         return "New Term of Payment"
 
     def search_value(self) -> str:
-        return f"{self.data.name} {self.data.name}" if self.data is not None else "Cash Pay Cash"
+        if self.data is None:
+            return PaymentMethod.default_search_query()
+        return self.data.search_query()
 
     def fill_form(self):
+        if self.data is None:
+            raise TypeError("PAYMENT_METHOD_IS_REQUIRED")
+
+        fields = self.data.resolve_fields()
+
         self.window.edit_text_field(
             field_name="Name",
-            value=self.data.name,
+            value=fields["Name"],
         )
 
         self.window.edit_text_field(
             field_name="Description",
-            value=self.data.name,
+            value=fields["Description"],
         )
 
         self.window.edit_combobox_field(
             field_name="!editorPaymentPaymentcode!",
-            value=self.data.payment_code,
+            value=fields["Payment code"],
         )
-
-        self.window.save()

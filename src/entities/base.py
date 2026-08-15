@@ -3,8 +3,8 @@ import win32con
 import win32gui
 from abc import ABC, abstractmethod
 from PIL import ImageGrab
-from ..ui.window import FakturamaWindow
-from ..vision.image_processor import count_rows
+from src.ui.window import FakturamaWindow
+from src.vision.image_processor import count_rows
 
 class FakturamaEntityUI(ABC):
     def __init__(
@@ -63,7 +63,7 @@ class FakturamaEntityUI(ABC):
             return self.count_table_rows()
         except:
             print("Failed To Count Table Rows, Falling Back To Default Creation Process")
-            return 0
+            return -1
 
     def _table(self):
         tab = self.window.element.TabControl(

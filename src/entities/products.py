@@ -1,7 +1,7 @@
 from src.models.product import Product
 from .base import FakturamaEntityUI
 
-# NOTE: what if we concatenate vat to sku so that it becomes a unique id
+
 class ProductsUI(FakturamaEntityUI):
     @property
     def footer_tab_name(self) -> str:
@@ -14,36 +14,33 @@ class ProductsUI(FakturamaEntityUI):
     @property
     def creation_tab_name(self) -> str:
         return "New product"
-    
-    def _parse_data(self):
-        data: Product = self.data
-        return data
-        
+
+    def _parse_data(self) -> Product:
+        return self.data
+
     def search_value(self) -> str:
-        data = self._parse_data()
-        return f"{data.sku}"
+        return self._parse_data().search_query()
 
     def fill_form(self):
         data = self._parse_data()
+        fields = data.resolve_fields()
 
         self.window.edit_text_field(
             field_name="Item Number",
-            value=data.sku,
+            value=fields["Item Number"],
         )
 
         self.window.edit_text_field(
             field_name="Name",
-            value=data.description,
+            value=fields["Name"],
         )
-        
+
         self.window.edit_fields(
             label_name="Price (gross)",
-            values=[f"{data.gross_price}"]
+            values=[fields["Price (gross)"]],
         )
 
         self.window.edit_combobox_field(
             field_name="VAT",
-            value=data.vat.name if data.vat else "Free of Tax",
+            value=fields["VAT"],
         )
-
-        self.window.save()

@@ -1,6 +1,5 @@
 import uiautomation as auto
-
-from .window import FakturamaWindow
+from src.ui.window import FakturamaWindow
 
 class FakturamaApp:
     def connect(self) -> FakturamaWindow:
@@ -10,7 +9,8 @@ class FakturamaApp:
         )
 
         if not self.window.Exists(5):
-            raise RuntimeError("Fakturama window not found")
+            print("Fakturama.exe Is Not Running")
+            exit(-1)
 
         self.window.SetFocus()
 

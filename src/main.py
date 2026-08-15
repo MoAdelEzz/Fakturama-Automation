@@ -1,22 +1,22 @@
 from dotenv import load_dotenv
 
+from datetime import date
+
 from src.entities.debtors import DebtorUI
 from src.entities.VATs import VATsUI
 from src.entities.payment_methods import PaymentMethodUI
 from src.entities.products import ProductsUI
+from src.models.vat import VAT
+from src.models.payment import PaymentMethod
+from src.models.debtor import Debtor
+from src.models.product import Product
+from src.models.order import Order, OrderItem
+from src.ui.app import FakturamaApp
 from src.workflows.entity import EntityWorkflow
 from src.workflows.invoice_creation import InvoiceCreationWorkflow
 from src.workflows.order_creation import OrderCreationWorkflow
+
 load_dotenv()
-
-from datetime import date
-from .models.vat import VAT
-from .models.payment import PaymentMethod
-from .models.debtor import Debtor
-from .models.product import Product
-from .models.order import Order, OrderItem
-from .ui.app import FakturamaApp
-
 
 def create_mock_order() -> Order:
     payment_method = PaymentMethod(
@@ -77,7 +77,6 @@ def create_mock_order() -> Order:
         isPaid=True,
         paid_at=date(2004, 8, 10),
     )
-
 
 def main():
     order = create_mock_order()

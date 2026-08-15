@@ -1,6 +1,7 @@
 from src.models.debtor import Debtor
 from .base import FakturamaEntityUI
 
+
 class DebtorUI(FakturamaEntityUI):
     @property
     def footer_tab_name(self) -> str:
@@ -13,97 +14,97 @@ class DebtorUI(FakturamaEntityUI):
     @property
     def creation_tab_name(self) -> str:
         return "New Debtor"
-    
-    def _parse_data(self):
+
+    def _parse_data(self) -> Debtor:
         data: Debtor | None = self.data
-        
+
         if data is None:
             raise TypeError("DEBTOR_IS_REQUIRED")
-            
+
         return data
-        
+
     def search_value(self) -> str:
-        data: Debtor = self._parse_data()
-        return f"{data.first_name} {data.last_name} { data.company } { data.zip_code } {data.city}"
-    
+        return self._parse_data().search_query()
+
     def fill_form(self):
-        data: Debtor = self._parse_data()
+        data = self._parse_data()
+        fields = data.resolve_fields()
+        addresses = fields["Addresses"]
+        misc = fields["Miscellaneous"]
 
         self.window.edit_text_field(
             field_name="Company",
-            value=data.company,
+            value=fields["Company"],
         )
-        
+
         self.window.edit_fields(
             label_name="First Name Last Name",
-            values=[data.first_name, data.last_name]
+            values=[fields["First Name"], fields["Last Name"]],
         )
-        
-        if data.additional_name is not None:
+
+        if addresses["additional name"] is not None:
             self.window.edit_text_field(
                 field_name="additional name",
-                value=data.additional_name,
+                value=addresses["additional name"],
             )
-        
+
         self.window.edit_text_field(
             field_name="Street",
-            value=data.street
+            value=addresses["Street"],
         )
-        
-        if data.address_specification is not None:
+
+        if addresses["Address specification"] is not None:
             self.window.edit_text_field(
                 field_name="Address specification",
-                value=data.address_specification,
+                value=addresses["Address specification"],
             )
-        
-        if data.district is not None:
+
+        if addresses["district"] is not None:
             self.window.edit_text_field(
                 field_name="district",
-                value=data.district,
+                value=addresses["district"],
             )
-        
+
         self.window.edit_fields(
             label_name="ZIP - City",
-            values=[data.zip_code, data.city]
+            values=[addresses["ZIP"], addresses["City"]],
         )
-        
+
         self.window.edit_combobox_field(
             field_name="Country",
-            value=data.country
+            value=addresses["Country"],
         )
-        
+
         self.window.edit_fields(
             label_name="address type",
-            values=["Invoice address"]
+            values=[addresses["address type"]],
         )
-        
+
         self.window.edit_text_field(
             field_name="E-Mail",
-            value=data.email
+            value=addresses["E-Mail"],
         )
-        
+
         self.window.edit_text_field(
             field_name="Telephone",
-            value=data.telephone
+            value=addresses["Telephone"],
         )
-        
+
         self.window.open_tab("Miscellaneous")
 
-        if data.alias is not None:
+        if misc["Alias name"] is not None:
             self.window.edit_text_field(
                 field_name="Alias name",
-                value=data.alias
+                value=misc["Alias name"],
             )
-        
+
         self.window.edit_combobox_field(
             field_name="Net or Gross",
-            value="Net"
+            value=misc["Net or Gross"],
         )
-        
+
         if data.payment_method is not None:
             self.window.edit_combobox_field(
                 field_name="Payment",
-                value=data.payment_method.name
+                value=misc["Payment"],
             )
-
-        self.window.save()

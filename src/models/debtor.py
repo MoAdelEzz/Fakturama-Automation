@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from typing import Any
+
+from .formatting import DEFAULT_PAYMENT
 from .payment import PaymentMethod
+
 
 @dataclass
 class Debtor:
@@ -24,6 +27,19 @@ class Debtor:
     district: str | None = None
     payment_method: PaymentMethod | None = None
 
+    def search_query(self) -> str:
+        return (
+            f"{self.first_name} {self.last_name} "
+            f"{self.company} {self.zip_code} {self.city}"
+        )
+
+    def payment_label(self) -> str:
+        return (
+            self.payment_method.name
+            if self.payment_method
+            else DEFAULT_PAYMENT
+        )
+
     def resolve_fields(self) -> dict[str, Any]:
         return {
             "Company": self.company,
@@ -40,15 +56,11 @@ class Debtor:
                 "additional name": self.additional_name,
                 "Address specification": self.address_specification,
                 "district": self.district,
-                "address type": "Invoice address"
+                "address type": "Invoice address",
             },
             "Miscellaneous": {
                 "Alias name": self.alias,
                 "Net or Gross": "Net",
-                "Payment Method": (
-                    self.payment_method.name
-                    if self.payment_method
-                    else "Pay Cash"
-                ), 
-            }
+                "Payment": self.payment_label(),
+            },
         }

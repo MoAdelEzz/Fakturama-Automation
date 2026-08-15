@@ -1,14 +1,24 @@
-import time
-
 import uiautomation as auto
 from typing import Any
 import re
-import pyautogui
+
 
 class FakturamaWindow:
     def __init__(self, element: Any):
         self.element = element
-        
+
+    def find_text(self, name: str) -> auto.Control:
+        control = self.element.TextControl(
+            Name=name,
+            searchDepth=30,
+        )
+        if not control.Exists(5):
+            raise RuntimeError(f"Text control '{name}' not found in window")
+        return control
+
+    def send_keys(self, keys: str) -> None:
+        self.element.SendKeys(keys)
+
     def find_edit_under(
         self,
         tab_name: str,
@@ -43,7 +53,7 @@ class FakturamaWindow:
             )
 
         return edit
-    
+
     def edit_text_field(
         self,
         field_name: str,
@@ -63,7 +73,7 @@ class FakturamaWindow:
         target.Click()
         target.SendKeys("{CTRL}A")
         target.SendKeys(value)
-    
+
     def edit_combobox_field(
         self,
         field_name: str,
@@ -81,10 +91,8 @@ class FakturamaWindow:
             )
 
         target.Click()
-        
         target.SendKeys(value)
 
-        # Select the desired item
         item = target.ListItemControl(
             RegexName=rf"{re.escape(value)}",
             searchDepth=10,
@@ -98,7 +106,6 @@ class FakturamaWindow:
             f"Combo box option '{value}' "
             f"not found for '{field_name}'"
         )
-    
 
     def edit_combobox_node(
         self,
@@ -106,10 +113,8 @@ class FakturamaWindow:
         value: str,
     ) -> None:
         target.Click()
-        
         target.SendKeys(value)
 
-        # Select the desired item
         item = target.ListItemControl(
             RegexName=rf"{re.escape(value)}",
             searchDepth=10,
@@ -123,8 +128,7 @@ class FakturamaWindow:
             f"Combo box option '{value}' "
             f"not found"
         )
-    
-    
+
     def click_button(self, button_name):
         target = self.element.ButtonControl(
             Name=button_name,
@@ -133,12 +137,12 @@ class FakturamaWindow:
 
         if not target.Exists(5):
             raise RuntimeError(
-                f"Combo box '{button_name}' "
+                f"Button '{button_name}' "
                 f"not found in window"
             )
 
         target.Click()
-        
+
     def get_fields(self, label_name: str, count: int):
         label = self.element.TextControl(Name=label_name, searchDepth=30)
         if not label.Exists(5):
@@ -164,6 +168,48 @@ class FakturamaWindow:
 
         return edit_fields
 
+    def get_labeled_field_value(self, label_name: str) -> str:
+        [field] = self.get_fields(label_name=label_name, count=1)
+        value_pattern = field.GetValuePattern()
+
+        if value_pattern is None:
+            raise RuntimeError(
+                f"Could not get value pattern for '{label_name}' field"
+            )
+
+        return value_pattern.Value
+
+    def enter_date_parts(self, label_name: str, date_parts: list[str]) -> None:
+        [date_target] = self.get_fields(label_name=label_name, count=1)
+        for value in date_parts:
+            date_target.SendKeys(str(value))
+
+    def set_price_mode(self, mode: str) -> None:
+        [date_target] = self.get_fields(label_name="Date", count=1)
+        parent = date_target.GetParentControl()
+        siblings = parent.GetParentControl().GetChildren()
+        gross_net_combo = siblings[-1]
+        self.edit_combobox_node(gross_net_combo, mode)
+
+    def set_checkbox(self, name: str, checked: bool) -> None:
+        checkbox = self.element.CheckBoxControl(
+            Name=name,
+            searchDepth=30,
+        )
+        if not checkbox.Exists(5):
+            raise RuntimeError(f"Checkbox '{name}' not found in window")
+
+        toggle_pattern = checkbox.GetTogglePattern()
+        if toggle_pattern is None:
+            if checked:
+                checkbox.Click()
+            return
+
+        if toggle_pattern.ToggleState != 1 and checked:
+            checkbox.Click()
+        elif toggle_pattern.ToggleState == 1 and not checked:
+            checkbox.Click()
+
     def edit_fields(self, values: list[str], label_name: str) -> None:
         fields = self.get_fields(label_name, len(values))
 
@@ -171,7 +217,7 @@ class FakturamaWindow:
             field.Click()
             field.SendKeys("{CTRL}A")
             field.SendKeys(value)
-    
+
     def open_tab(self, tab_name: str):
         tab = self.element.TabItemControl(
             Name=tab_name,
@@ -184,7 +230,7 @@ class FakturamaWindow:
             )
 
         tab.Click()
-    
+
     def is_tab_opened(self, tab_name: str):
         def walk(control):
             yield control
@@ -213,7 +259,7 @@ class FakturamaWindow:
                 return True, tabControl
 
         return False, None
-    
+
     def save(self):
         target = self.element.ButtonControl(
             Name="Save the current contents",
@@ -226,25 +272,23 @@ class FakturamaWindow:
             )
 
         target.Click()
-        
+
         if target.IsEnabled:
             raise RuntimeError("SAVE_BUTTON_FAILED")
-    
+
     def focus(self) -> None:
         self.element.SetFocus()
-    
+
     def close_active_tab(self) -> None:
         self.focus()
         self.element.SendKeys("{CTRL}{SHIFT}W")
-    
+
     def open_sidebar_item(self, name: str) -> None:
         self.focus()
-        
+
         isOpen, _ = self.is_tab_opened(name)
-        
-        print(isOpen)
-        
-        if isOpen == True:
+
+        if isOpen:
             return
 
         control = self.element.TextControl(
@@ -256,7 +300,7 @@ class FakturamaWindow:
             raise RuntimeError(
                 f"Could not find sidebar item: {name}"
             )
-            
+
         control.Click()
-        
+
         self.open_tab(name)
