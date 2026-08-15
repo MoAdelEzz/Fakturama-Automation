@@ -17,3 +17,4 @@ __pycache__/
 # Debug
 @AutomationLog.txt
 debug/
+testcases/

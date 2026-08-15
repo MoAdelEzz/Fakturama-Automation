@@ -1,113 +1,78 @@
-from __future__ import annotations
-
-import base64
-import io
-import json
 import os
-import re
+from pathlib import Path
+import sys
+import requests
+from src.env import N8N_WEBHOOK_URL
 
-from PIL import Image
-from huggingface_hub import InferenceClient
+from src.models.order import Order
 
-
-class RowCounter:
-    MODEL = "Qwen/Qwen3-VL-4B-Instruct"
-
+class N8NClient:
     def __init__(self):
-        token = os.getenv("HF_TOKEN")
+        self.webhook_url = N8N_WEBHOOK_URL
+        
+    def handleError(self, error: dict | None):
+        raise RuntimeError(error)
 
-        if not token:
-            raise RuntimeError(
-                "HF_TOKEN environment variable is not set"
+    def parse_order_image(self, image_path: str | Path) -> Order:
+        image_path = Path(image_path)
+
+        if not image_path.exists():
+            raise FileNotFoundError(
+                f"Order image not found: {image_path}"
             )
 
-        self.client = InferenceClient(
-            api_key=token,
-            provider="featherless-ai"
-        )
+        with image_path.open("rb") as image:
+            response = requests.post(
+                self.webhook_url,
+                files={
+                    "image": (
+                        image_path.name,
+                        image,
+                        self._mime_type(image_path),
+                    )
+                },
+                timeout=120,
+            )
+
+        response.raise_for_status()
+
+        data = response.json()
+        
+        if data.get("success") == False or data.get("order") is None:
+            self.handleError(data.get("error"))
+        else:
+            return Order.from_json(data.get("order"))
+            
+        
+        
 
     @staticmethod
-    def _image_to_base64(image: Image.Image) -> str:
-        buffer = io.BytesIO()
-        image.save(buffer, format="PNG")
+    def _mime_type(path: Path) -> str:
+        suffix = path.suffix.lower()
 
-        return base64.b64encode(
-            buffer.getvalue()
-        ).decode("utf-8")
+        mime_types = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".webp": "image/webp",
+        }
 
-    def count_rows(self, image: Image.Image) -> int:
-        image_base64 = self._image_to_base64(image)
-
-        prompt = """
-            You are analyzing a screenshot of a Fakturama table.
-
-            Count ONLY the visible DATA ROWS.
-
-            Rules:
-            - Do not count the table header.
-            - Do not count toolbars.
-            - Do not count the search bar.
-            - Do not count borders.
-            - Do not count empty rows.
-            - Each visible record is exactly one row.
-            - Return ONLY valid JSON.
-
-            Required format:
-            {
-                "row_count": 0
-            }
-        """
-
-        response = self.client.chat.completions.create(
-            model=self.MODEL,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": prompt,
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": (
-                                    "data:image/png;base64,"
-                                    f"{image_base64}"
-                                )
-                            },
-                        },
-                    ],
-                }
-            ],
-            max_tokens=500,
+        return mime_types.get(
+            suffix,
+            "application/octet-stream",
         )
 
-        print(response)
 
-        if response.choices[0].message.content is None:
-            return 0
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        raise RuntimeError(
+            "Usage: python -m src.main <image_path>"
+        )
 
-        raw = response.choices[0].message.content.strip()
+    image_path = sys.argv[1]
 
-        raw = re.sub(
-            r"```(?:json)?\s*",
-            "",
-            raw,
-        ).replace("```", "").strip()
+    n8n = N8NClient()
 
-        result = json.loads(raw)
+    result = n8n.parse_order_image(image_path)
 
-        count = result.get("row_count")
-
-        if not isinstance(count, int):
-            raise RuntimeError(
-                f"Invalid row count returned: {raw}"
-            )
-
-        if count < 0:
-            raise RuntimeError(
-                f"Invalid negative row count: {count}"
-            )
-
-        return count
+    print(result)

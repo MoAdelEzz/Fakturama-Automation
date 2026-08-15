@@ -1,4 +1,4 @@
-from dotenv import load_dotenv
+import sys
 
 from datetime import date
 
@@ -10,77 +10,26 @@ from src.models.vat import VAT
 from src.models.payment import PaymentMethod
 from src.models.debtor import Debtor
 from src.models.product import Product
-from src.models.order import Order, OrderItem
+from src.models.order import Order
 from src.ui.app import FakturamaApp
+from src.vision.n8n_controller import N8NClient
 from src.workflows.entity import EntityWorkflow
 from src.workflows.invoice_creation import InvoiceCreationWorkflow
 from src.workflows.order_creation import OrderCreationWorkflow
 
-load_dotenv()
-
-def create_mock_order() -> Order:
-    payment_method = PaymentMethod(
-        name="Test",
-        payment_code="Credit transfer",
-    )
-
-    vat_19 = VAT(
-        percentage=19,
-    )
-
-    debtor = Debtor(
-        company="Northstar Office GmbH",
-        first_name="Marta",
-        last_name="Klein",
-
-        street="Friedrichstrasse 88",
-        zip_code="10117",
-        city="Berlin",
-        country="Germany",
-
-        email="marta.klein@example.test",
-        telephone="+49 30 5550 1420",
-
-        alias="NORTHSTAR-BERLIN",
-
-        payment_method=payment_method,
-    )
-
-    desk_chair = Product(
-        sku="CHR-ERG-01",
-        description="Ergonomic Desk Chair",
-        vat=vat_19,
-        net_price=250.00,
-    )
-
-    desk_mat = Product(
-        sku="MAT-DESK-02",
-        description="Anti-Fatigue Desk Mat",
-        net_price=40.00,
-    )
-
-    return Order(
-        external_reference="WEB-2026-0714-A17",
-        order_date=date(2026, 7, 14),
-        debtor=debtor,
-        items=[
-            OrderItem(
-                product=desk_chair,
-                quantity=2,
-            ),
-            OrderItem(
-                product=desk_mat,
-                quantity=3,
-            ),
-        ],
-        discount=10,
-        isPaid=True,
-        paid_at=date(2004, 8, 10),
-    )
 
 def main():
-    order = create_mock_order()
-
+    if len(sys.argv) < 2:
+        raise RuntimeError(
+            "Usage: python -m src.main <image_path>"
+        )
+    image_path = sys.argv[1]
+    
+    nNClient = N8NClient()
+    order = nNClient.parse_order_image(image_path)
+    
+    print(order)
+    
     app = FakturamaApp()
     window = app.connect()
 
@@ -93,7 +42,7 @@ def main():
         *[
             EntityWorkflow(
                 window,
-                item.product.vat,
+                item.vat,
                 VATsUI,
             )
             for item in order.items
@@ -106,7 +55,7 @@ def main():
         *[
             EntityWorkflow(
                 window,
-                item.product,
+                item,
                 ProductsUI,
             )
             for item in order.items
@@ -126,8 +75,5 @@ def main():
     )
     invoiceWorkflow.run()
     
-    
-
-
 if __name__ == "__main__":
     main()

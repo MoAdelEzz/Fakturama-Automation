@@ -2,29 +2,26 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
+from src.models.payment import PaymentMethod
+from src.models.vat import VAT
+
 from .debtor import Debtor
 from .formatting import format_fakturama_date
 from .product import Product
 
-
-@dataclass
-class OrderItem:
-    product: Product
-    quantity: int
-
-
 @dataclass
 class Order:
     external_reference: str
-    order_date: date
+    created_at: str
+    discount: float | None
+    
     debtor: Debtor
-    items: list[OrderItem]
-    discount: float
+    items: list[Product]
     isPaid: bool
-    paid_at: date
+    paid_at: str
 
-    def order_date_parts(self) -> list[str]:
-        return format_fakturama_date(self.order_date)
+    def created_at_parts(self) -> list[str]:
+        return format_fakturama_date(self.created_at)
 
     def paid_date_parts(self) -> list[str] | None:
         if self.paid_at is None:
@@ -38,8 +35,50 @@ class Order:
 
     def resolve_fields(self) -> dict[str, Any]:
         return {
-            "Date": self.order_date_parts(),
+            "Date": self.created_at_parts(),
             "Cust.Ref.": self.external_reference,
             "Price mode": "Net",
             "Discount": self.discount_display(),
         }
+
+    @staticmethod
+    def from_json(data: dict):
+        debtor = data["debtor"]
+        payment = data["payment"]
+
+        return Order(
+            created_at=data["order_created_at"],
+            external_reference=data["order_external_refernece"],
+            discount=data.get("order_level_discount", None),
+            debtor=Debtor(
+                company=debtor["company"],
+                first_name=debtor["first_name"],
+                last_name=debtor["last_name"],
+                street=debtor["street"],
+                zip_code=debtor["zip_code"],
+                city=debtor["city"],
+                country=debtor["country"],
+                salutation=debtor.get("salutaion", None),
+                address_specification=debtor.get("addressSpecification", None),
+                district=debtor.get("district", None),
+                email=debtor["email"],
+                alias=debtor.get("alias", None),
+                additional_name="",
+                telephone=debtor["telephone"],
+                payment_method=PaymentMethod(
+                    name=payment.get("paymentMethod", None)
+                ),
+            ),
+            items=[
+                Product(
+                    description=product["description"],
+                    sku=product["sku"],
+                    net_price=product["unit_price"],
+                    quantity=product["quantity"],
+                    vat=VAT(product["vat"]),
+                )
+                for product in data["items"]
+            ],
+            paid_at=payment.get("paid_at", None),
+            isPaid=payment.get("isPaid", False),
+        )

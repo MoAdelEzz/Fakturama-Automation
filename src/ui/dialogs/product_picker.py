@@ -1,4 +1,4 @@
-from src.models.order import OrderItem
+from src.models.product import Product
 from src.ui.dialogs.common import DialogHelper, ROW_HEIGHT, ROW_START_OFFSET
 from src.ui.window import FakturamaWindow
 
@@ -9,7 +9,7 @@ class ProductPickerDialog:
         self.window = window
         self._helper = DialogHelper(window)
 
-    def _modify_item_quantities(self, item: OrderItem, index: int) -> None:
+    def _modify_item_quantities(self, item: Product, index: int) -> None:
         num_text = self.window.find_text("No.")
         parent = num_text.GetParentControl()
         if parent is None:
@@ -22,13 +22,13 @@ class ProductPickerDialog:
             self.window.send_keys(f"{item.quantity}")
             self.window.send_keys("{ENTER}")
 
-    def populate_items(self, items: list[OrderItem]) -> None:
+    def populate_items(self, items: list[Product]) -> None:
         for index, item in enumerate(items):
             self._helper.click_section_button(section_label="Items", button_index=1)
 
             self._helper.search_and_select_first_row(
                 self.DIALOG_NAME,
-                item.product.search_query(),
+                item.search_query(),
             )
 
             self._modify_item_quantities(item, index)

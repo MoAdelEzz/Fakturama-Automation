@@ -19,13 +19,14 @@ class Debtor:
     email: str
     telephone: str
 
+    payment_method: PaymentMethod
+    
     alias: str | None = None
 
     salutation: str = "---"
     additional_name: str | None = None
     address_specification: str | None = None
     district: str | None = None
-    payment_method: PaymentMethod | None = None
 
     def search_query(self) -> str:
         return (

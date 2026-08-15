@@ -5,9 +5,10 @@ TAX_FREE_LABEL = "Free of Tax"
 DEFAULT_PAYMENT = "Pay Cash"
 
 
-def format_fakturama_date(d: date) -> list[str]:
+def format_fakturama_date(d: str) -> list[str]:
+    parts = d.split("-")
     return [
-        f"{d.day:02d}",
-        f"{d.month:02d}",
-        str(d.year),
+        f"{int(parts[2]):02d}",
+        f"{int(parts[1]):02d}",
+        str(parts[0]),
     ]

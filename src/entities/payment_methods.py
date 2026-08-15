@@ -16,8 +16,6 @@ class PaymentMethodUI(FakturamaEntityUI):
         return "New Term of Payment"
 
     def search_value(self) -> str:
-        if self.data is None:
-            return PaymentMethod.default_search_query()
         return self.data.search_query()
 
     def fill_form(self):

@@ -18,7 +18,7 @@ class OrderFormUI:
         return self.window.get_labeled_field_value("No.")
 
     def populate_general_info(self, order: Order) -> None:
-        self.window.enter_date_parts("Date", order.order_date_parts())
+        self.window.enter_date_parts("Date", order.created_at_parts())
         self.window.set_price_mode("Net")
         self.window.edit_text_field(
             field_name="Cust.Ref.",

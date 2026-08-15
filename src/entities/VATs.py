@@ -16,15 +16,11 @@ class VATsUI(FakturamaEntityUI):
         return "New TAX Rate"
 
     def _resolve_fields(self) -> dict[str, str]:
-        data: VAT | None = self.data
-        if data is None:
-            return VAT.tax_free_resolve_fields()
+        data: VAT = self.data
         return data.resolve_fields()
 
     def search_value(self) -> str:
-        data: VAT | None = self.data
-        if data is None:
-            return VAT.tax_free_search_query()
+        data: VAT = self.data
         return data.search_query()
 
     def fill_form(self):

@@ -9,24 +9,19 @@ from .vat import VAT
 class Product:
     sku: str
     description: str
-    vat: VAT | None = None
+    quantity: int
+    vat: VAT
     net_price: float = 0.0
 
     @property
     def gross_price(self) -> float:
-        return round(
-            self.net_price * (1 + self.vat.percentage / 100),
-            2,
-        ) if self.vat else self.net_price
+        return self.vat.apply(self.net_price)
 
     def search_query(self) -> str:
         return self.sku
 
     def formatted_gross_price(self) -> str:
         return f"{self.gross_price}"
-
-    def vat_combo_label(self) -> str:
-        return self.vat.name if self.vat else TAX_FREE_LABEL
 
     def resolve_fields(self) -> dict[str, Any]:
         return {
@@ -35,5 +30,5 @@ class Product:
             "Description": self.description,
             "Price (gross)": self.formatted_gross_price(),
             "Cost price (net)": self.net_price,
-            "VAT": self.vat_combo_label(),
+            "VAT": self.vat.name,
         }
