@@ -111,9 +111,6 @@ Both `--order` and the n8n webhook use the same shape — the root object is the
   }
 }
 ```
-
-Item `description` is optional — if omitted, `sku` is used.
-
 ## n8n integration
 
 The webhook receives a multipart POST with an `image` field and should respond with the order JSON object directly (same format as above).
