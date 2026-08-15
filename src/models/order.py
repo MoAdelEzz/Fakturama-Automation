@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from datetime import date
+import json
+from pathlib import Path
 from typing import Any
 
 from src.models.payment import PaymentMethod
@@ -58,7 +59,7 @@ class Order:
                 zip_code=debtor["zip_code"],
                 city=debtor["city"],
                 country=debtor["country"],
-                salutation=debtor.get("salutaion", "---"),
+                salutation=debtor.get("salutaion") or "---",
                 address_specification=debtor.get("addressSpecification", None),
                 district=debtor.get("district", None),
                 email=debtor["email"],
@@ -71,7 +72,7 @@ class Order:
             ),
             items=[
                 Product(
-                    description=product["description"],
+                    description=product.get("description", product["sku"]),
                     sku=f"{product["sku"]}-VAT{product.get("vat", 0)}",
                     net_price=product["unit_price"],
                     discount=product.get("discount", 0),
@@ -83,3 +84,19 @@ class Order:
             paid_at=payment.get("paid_at", None),
             isPaid=payment.get("isPaid", False),
         )
+
+    @staticmethod
+    def load(source: str) -> "Order":
+        source = source.strip()
+
+        if source.startswith("{"):
+            data = json.loads(source)
+        else:
+            path = Path(source)
+            if not path.exists():
+                raise FileNotFoundError(
+                    f"Order JSON not found: {path}"
+                )
+            data = json.loads(path.read_text(encoding="utf-8"))
+
+        return Order.from_json(data)

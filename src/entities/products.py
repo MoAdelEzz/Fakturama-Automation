@@ -15,6 +15,14 @@ class ProductsUI(FakturamaEntityUI):
     def creation_tab_name(self) -> str:
         return "New product"
 
+    @property
+    def entity_name(self) -> str:
+        return "product"
+
+    @property
+    def entity_target(self) -> str:
+        return self._parse_data().sku
+
     def _parse_data(self) -> Product:
         return self.data
 

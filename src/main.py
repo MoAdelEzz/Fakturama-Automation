@@ -1,76 +1,134 @@
+import argparse
+import logging
 import sys
 
 from src.entities.debtors import DebtorUI
 from src.entities.VATs import VATsUI
 from src.entities.payment_methods import PaymentMethodUI
 from src.entities.products import ProductsUI
+from src.models.order import Order
 from src.ui.app import FakturamaApp
 from src.vision.n8n_controller import N8NClient
 from src.workflows.entity import EntityWorkflow
 from src.workflows.invoice_creation import InvoiceCreationWorkflow
 from src.workflows.order_creation import OrderCreationWorkflow
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
-def main():
-    if len(sys.argv) < 2:
-        raise RuntimeError(
-            "Usage: python -m src.main <image_path>"
-        )
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Automate Fakturama order and invoice creation",
+    )
+    
+    parser.add_argument(
+        "image",
+        nargs="?",
+        help="Path to order image (parsed via n8n webhook)",
+    )
+    
+    parser.add_argument(
+        "--order",
+        help="Order JSON — file path or inline JSON string",
+    )
+    
+    args = parser.parse_args()
+
+    if args.order and args.image:
+        parser.error("Specify either an image path or --order, not both")
         
-    app = FakturamaApp()
-    window = app.connect()
-    
-    image_path = sys.argv[1]
-    
-    nNClient = N8NClient()
-    order = nNClient.parse_order_image(image_path)
-    
-    # order = Order(external_reference='WEB-2026-0714-A17', created_at='2026-07-14', discount=None, debtor=Debtor(company='Northstar Office GmbH', first_name='Marta', last_name='Klein', street='Friedrichstrasse 88', zip_code='10117', city='Berlin', country='Germany', email='marta.klein@example.test', telephone='+49 30 5550 1420', payment_method=PaymentMethod(name='Bank Transfer'), alias=None, salutation="---", additional_name=None, address_specification=None, district=None), items=[Product(sku='CHR-ERG-01-VAT19', description='Ergonomic Desk Chair', quantity=2, vat=VAT(percentage=19), net_price=250), Product(sku='MAT-DES-02-VAT19', description='Anti-Fatigue Desk Mat', quantity=3, vat=VAT(percentage=19), net_price=40)], isPaid=True, paid_at='2026-07-18')
-    
+    if not args.order and not args.image:
+        parser.error("Provide an image path or --order JSON")
+
+    return args
+
+
+def load_order(args) -> Order:
+    if args.order:
+        logger.info("Loading order from JSON")
+        return Order.load(args.order)
+
+    logger.info("Parsing order from %s", args.image)
+    return N8NClient().parse_order_image(args.image)
+
+
+def run_pipeline(window, order: Order):
     uniqueVats = list({
         item.vat.percentage: item.vat
         for item in order.items
     }.values())
-    
-    workflows = [
-        EntityWorkflow(
-            window,
-            order.debtor.payment_method,
-            PaymentMethodUI
-        ),
-        *[
-            EntityWorkflow(
-                window,
-                vat,
-                VATsUI,
-            )
-            for vat in uniqueVats
-        ],
-        EntityWorkflow(
-            window,
-            order.debtor,
-            DebtorUI
-        ),
-        *[
-            EntityWorkflow(
-                window,
-                item,
-                ProductsUI,
-            )
-            for item in order.items
-        ],
-    ]
-    
-    for workflow in workflows:
-        workflow.run()
-    
-    OID = OrderCreationWorkflow(window, order).run()
-    
-    InvoiceCreationWorkflow(
+
+    logger.info("Order parsed — reference: %s", order.external_reference)
+    logger.info(
+        "Debtor extracted: %s (%s %s)",
+        order.debtor.company,
+        order.debtor.first_name,
+        order.debtor.last_name,
+    )
+    logger.info(
+        "Payment method extracted: %s",
+        order.debtor.payment_method.name or "default",
+    )
+    logger.info(
+        "Unique VATs extracted: %s",
+        [vat.name for vat in uniqueVats],
+    )
+    logger.info(
+        "Products extracted: %s",
+        [f"{item.sku} x{item.quantity}" for item in order.items],
+    )
+
+    logger.info("--- Ensuring payment method ---")
+    EntityWorkflow(
         window,
-        order,
-        OID
+        order.debtor.payment_method,
+        PaymentMethodUI,
     ).run()
-    
+
+    logger.info("--- Ensuring VAT rates ---")
+    for vat in uniqueVats:
+        EntityWorkflow(window, vat, VATsUI).run()
+
+    logger.info("--- Ensuring debtor ---")
+    EntityWorkflow(window, order.debtor, DebtorUI).run()
+
+    logger.info("--- Ensuring products ---")
+    for item in order.items:
+        EntityWorkflow(window, item, ProductsUI).run()
+
+    logger.info("--- Creating order ---")
+    OID = OrderCreationWorkflow(window, order).run()
+
+    logger.info("--- Creating invoice ---")
+    InvoiceCreationWorkflow(window, order, OID).run()
+
+    logger.info("Pipeline complete — order %s invoiced", OID)
+
+
+def main():
+    args = parse_args()
+
+    logger.info("Connecting to Fakturama...")
+    app = FakturamaApp()
+    window = app.connect()
+
+    order = load_order(args)
+    run_pipeline(window, order)
+
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        logger.error("Application stopped by user (Ctrl+C)")
+        sys.exit(130)
+    except RuntimeError as e:
+        logger.error("Application stopped: %s", e)
+        sys.exit(1)
+    except Exception as e:
+        logger.error("Application stopped due to unexpected error: %s", e)
+        sys.exit(1)

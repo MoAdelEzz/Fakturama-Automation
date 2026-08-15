@@ -15,6 +15,14 @@ class PaymentMethodUI(FakturamaEntityUI):
     def creation_tab_name(self) -> str:
         return "New Term of Payment"
 
+    @property
+    def entity_name(self) -> str:
+        return "payment method"
+
+    @property
+    def entity_target(self) -> str:
+        return self.data.description if self.data else "unknown"
+
     def search_value(self) -> str:
         return self.data.search_query()
 

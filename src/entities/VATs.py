@@ -15,6 +15,14 @@ class VATsUI(FakturamaEntityUI):
     def creation_tab_name(self) -> str:
         return "New TAX Rate"
 
+    @property
+    def entity_name(self) -> str:
+        return "VAT rate"
+
+    @property
+    def entity_target(self) -> str:
+        return self.data.name
+
     def _resolve_fields(self) -> dict[str, str]:
         data: VAT = self.data
         return data.resolve_fields()

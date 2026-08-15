@@ -1,6 +1,10 @@
+import logging
+
 from src.models.order import Order
 from src.ui.forms.invoice_form import InvoiceFormUI
 from src.ui.window import FakturamaWindow
+
+logger = logging.getLogger(__name__)
 
 
 class InvoiceCreationWorkflow:
@@ -15,6 +19,11 @@ class InvoiceCreationWorkflow:
         self.OID = OID
 
     def run(self):
+        logger.info(
+            "Creating invoice from order %s (paid=%s)...",
+            self.OID,
+            self.order.isPaid,
+        )
         self.window.focus()
 
         form = InvoiceFormUI(self.window)
@@ -23,3 +32,4 @@ class InvoiceCreationWorkflow:
 
         self.window.save()
         self.window.close_active_tab()
+        logger.info("Invoice for order %s saved successfully", self.OID)

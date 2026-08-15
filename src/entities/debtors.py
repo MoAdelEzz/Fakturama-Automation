@@ -15,6 +15,15 @@ class DebtorUI(FakturamaEntityUI):
     def creation_tab_name(self) -> str:
         return "New Debtor"
 
+    @property
+    def entity_name(self) -> str:
+        return "debtor"
+
+    @property
+    def entity_target(self) -> str:
+        data = self._parse_data()
+        return data.company or f"{data.first_name} {data.last_name}"
+
     def _parse_data(self) -> Debtor:
         data: Debtor | None = self.data
 

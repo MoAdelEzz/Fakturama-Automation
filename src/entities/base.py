@@ -1,3 +1,4 @@
+import logging
 import time
 import win32con
 import win32gui
@@ -5,6 +6,9 @@ from abc import ABC, abstractmethod
 from PIL import ImageGrab
 from src.ui.window import FakturamaWindow
 from src.vision.image_processor import count_rows
+
+logger = logging.getLogger(__name__)
+
 
 class FakturamaEntityUI(ABC):
     def __init__(
@@ -29,6 +33,14 @@ class FakturamaEntityUI(ABC):
     @abstractmethod
     def creation_tab_name(self) -> str:
         ...
+
+    @property
+    def entity_name(self) -> str:
+        return self.footer_tab_name.lower()
+
+    @property
+    def entity_target(self) -> str:
+        return self.search_value()
 
     def open_footer_tab(self):
         self.window.open_sidebar_item(self.footer_tab_name)
@@ -61,9 +73,14 @@ class FakturamaEntityUI(ABC):
 
         try:
             return self.count_table_rows()
-        except:
-            print("Failed To Count Table Rows, Falling Back To Default Creation Process")
-            return -1
+        except Exception:
+            logger.warning(
+                "Failed to count table rows for %s '%s'; "
+                "falling back to record creation",
+                self.entity_name,
+                self.entity_target,
+            )
+            return 0
 
     def _table(self):
         tab = self.window.element.TabControl(
