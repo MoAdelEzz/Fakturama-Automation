@@ -1,6 +1,7 @@
 from src.models.product import Product
 from src.ui.dialogs.common import DialogHelper, ROW_HEIGHT, ROW_START_OFFSET
 from src.ui.window import FakturamaWindow
+from src.vision.utils import get_dpi_scale
 
 class ProductPickerDialog:
     DIALOG_NAME = "Select a product"
@@ -15,14 +16,16 @@ class ProductPickerDialog:
         if parent is None:
             raise RuntimeError("Section text has no parent")
         table = parent.GetChildren()[-1]
-        row_y = ROW_START_OFFSET + (index + 1) * ROW_HEIGHT
+        screenScale = get_dpi_scale()
         
-        table.Click(x=75, y=row_y)
+        row_y = round((ROW_START_OFFSET + (index + 1) * ROW_HEIGHT) * screenScale)
+        
+        table.Click(x=round(75 * screenScale), y=row_y)
         self.window.send_keys(f"{item.quantity}")
         self.window.send_keys("{ENTER}")
 
         if item.discount > 0:
-            table.Click(x=75 + 100 * 7, y=row_y)
+            table.Click(x=round((75 + 100 * 7) * screenScale), y=row_y)
             self.window.send_keys(f"{item.discount}")
             self.window.send_keys("{ENTER}")
 
