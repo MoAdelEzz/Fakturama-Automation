@@ -206,9 +206,13 @@ class FakturamaWindow:
             selection = control.GetSelectionItemPattern()
 
             if selection and selection.IsSelected:
-                return True
+                tabControl = self.element.TabControl(
+                    Name=tab_name,
+                    searchDepth=30
+                )
+                return True, tabControl
 
-        return False
+        return False, None
     
     def save(self):
         target = self.element.ButtonControl(
@@ -236,7 +240,9 @@ class FakturamaWindow:
     def open_sidebar_item(self, name: str) -> None:
         self.focus()
         
-        isOpen = self.is_tab_opened(name)
+        isOpen, _ = self.is_tab_opened(name)
+        
+        print(isOpen)
         
         if isOpen == True:
             return

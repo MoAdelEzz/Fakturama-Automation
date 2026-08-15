@@ -5,12 +5,13 @@ from src.entities.VATs import VATsUI
 from src.entities.payment_methods import PaymentMethodUI
 from src.entities.products import ProductsUI
 from src.workflows.entity import EntityWorkflow
+from src.workflows.invoice_creation import InvoiceCreationWorkflow
 from src.workflows.order_creation import OrderCreationWorkflow
 load_dotenv()
 
 from datetime import date
 from .models.vat import VAT
-from .models.payment_method import PaymentMethod
+from .models.payment import PaymentMethod
 from .models.debtor import Debtor
 from .models.product import Product
 from .models.order import Order, OrderItem
@@ -73,6 +74,8 @@ def create_mock_order() -> Order:
             ),
         ],
         discount=10,
+        isPaid=True,
+        paid_at=date(2004, 8, 10),
     )
 
 
@@ -115,7 +118,16 @@ def main():
         workflow.run()
     
     orderWorkflow = OrderCreationWorkflow(window, order)
-    orderWorkflow.run()
+    orderNumber = orderWorkflow.run()
+    
+    invoiceWorkflow = InvoiceCreationWorkflow(
+        window,
+        order,
+        orderNumber
+    )
+    invoiceWorkflow.run()
+    
+    
 
 
 if __name__ == "__main__":

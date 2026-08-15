@@ -12,7 +12,6 @@ class PaymentMethod:
     name: str
     payment_code: str
 
-
     def resolve_fields(self) -> dict[str, Any]:        
         return {
             "Name": self.name,

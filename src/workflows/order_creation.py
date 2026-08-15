@@ -14,10 +14,21 @@ class OrderCreationWorkflow:
         self.order = order
         
     def open_form(self):
-        if self.window.is_tab_opened("New Order"):
+        isOpen, _ = self.window.is_tab_opened("New Order")
+        if isOpen:
             return
         
         self.window.click_button(button_name="Create: New Order")
+        
+    def getOrderNo(self):
+        [number_field] = self.window.get_fields(label_name="No.", count=1)
+    
+        value_pattern = number_field.GetValuePattern()
+
+        if value_pattern is None:
+            raise RuntimeError("Could not get value pattern for order number field")
+
+        return value_pattern.Value
         
     def resolveNetGrossComboBox(self, date_control):
         parent = date_control.GetParentControl()
@@ -94,13 +105,13 @@ class OrderCreationWorkflow:
         
         table = numText.GetParentControl().GetChildren()[-1]
         
-        table.Click(x=75, y=10 + (index + 1) * 20)
+        table.Click(x=75, y=12 + (index + 1) * 20)
         self.window.element.SendKeys(f"{product.quantity}")
         self.window.element.SendKeys("{ENTER}")
         
         width = 100
         
-        table.Click(x=75+width*7, y=10 + (index + 1) * 20)
+        table.Click(x=75+width*7, y=12 + (index + 1) * 20)
         self.window.element.SendKeys(f"{product.quantity}")
         self.window.element.SendKeys("{ENTER}")
         
@@ -165,6 +176,7 @@ class OrderCreationWorkflow:
     def run(self):
         self.window.focus()
         self.open_form()
+        orderNumber = self.getOrderNo()
         self.populateGeneralInfo()
         self.populateInvoice()
         
@@ -172,3 +184,5 @@ class OrderCreationWorkflow:
         self.populateProductDetails()
         
         self.window.save()
+        
+        return orderNumber

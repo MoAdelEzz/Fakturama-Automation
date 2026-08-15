@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Any
-from .payment_method import PaymentMethod
+from .payment import PaymentMethod
 
 @dataclass
 class Debtor:

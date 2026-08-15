@@ -17,6 +17,8 @@ class Order:
     debtor: Debtor
     items: list[OrderItem]
     discount: float
+    isPaid: bool
+    paid_at: date
 
     def resolve_fields(self) -> dict[str, Any]:
         return {
