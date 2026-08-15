@@ -12,6 +12,7 @@ class Product:
     quantity: int
     vat: VAT
     net_price: float = 0.0
+    discount: float = 0.0
 
     @property
     def gross_price(self) -> float:

@@ -58,12 +58,12 @@ class Order:
                 zip_code=debtor["zip_code"],
                 city=debtor["city"],
                 country=debtor["country"],
-                salutation=debtor.get("salutaion", None),
+                salutation=debtor.get("salutaion", "---"),
                 address_specification=debtor.get("addressSpecification", None),
                 district=debtor.get("district", None),
                 email=debtor["email"],
                 alias=debtor.get("alias", None),
-                additional_name="",
+                additional_name=None,
                 telephone=debtor["telephone"],
                 payment_method=PaymentMethod(
                     name=payment.get("paymentMethod", None)
@@ -72,8 +72,9 @@ class Order:
             items=[
                 Product(
                     description=product["description"],
-                    sku=product["sku"],
+                    sku=f"{product["sku"]}-VAT{product.get("vat", 0)}",
                     net_price=product["unit_price"],
+                    discount=product.get("discount", 0),
                     quantity=product["quantity"],
                     vat=VAT(product["vat"]),
                 )

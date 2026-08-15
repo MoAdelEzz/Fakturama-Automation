@@ -9,17 +9,21 @@ class ProductPickerDialog:
         self.window = window
         self._helper = DialogHelper(window)
 
-    def _modify_item_quantities(self, item: Product, index: int) -> None:
+    def _modify_item_row(self, item: Product, index: int) -> None:
         num_text = self.window.find_text("No.")
         parent = num_text.GetParentControl()
         if parent is None:
             raise RuntimeError("Section text has no parent")
         table = parent.GetChildren()[-1]
         row_y = ROW_START_OFFSET + (index + 1) * ROW_HEIGHT
+        
+        table.Click(x=75, y=row_y)
+        self.window.send_keys(f"{item.quantity}")
+        self.window.send_keys("{ENTER}")
 
-        for column_offset in (0, 7):
-            table.Click(x=75 + 100 * column_offset, y=row_y)
-            self.window.send_keys(f"{item.quantity}")
+        if item.discount > 0:
+            table.Click(x=75 + 100 * 7, y=row_y)
+            self.window.send_keys(f"{item.discount}")
             self.window.send_keys("{ENTER}")
 
     def populate_items(self, items: list[Product]) -> None:
@@ -31,4 +35,4 @@ class ProductPickerDialog:
                 item.search_query(),
             )
 
-            self._modify_item_quantities(item, index)
+            self._modify_item_row(item, index)

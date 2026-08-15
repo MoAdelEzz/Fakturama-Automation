@@ -43,9 +43,6 @@ class N8NClient:
         else:
             return Order.from_json(data.get("order"))
             
-        
-        
-
     @staticmethod
     def _mime_type(path: Path) -> str:
         suffix = path.suffix.lower()

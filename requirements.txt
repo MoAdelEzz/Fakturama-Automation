@@ -1,16 +1,18 @@
-# Windows UI automation
+# Python 3.11+ recommended
+
+# Windows UI automation (Fakturama desktop app)
 uiautomation==2.0.29
 pywin32==312
 
-# Screenshots & image handling
+# Screenshots and image handling
 Pillow==12.3.0
 
-# Table row detection
+# Entity table row detection (OpenCV fallback)
 opencv-python==5.0.0.93
 numpy==2.5.2
 
-# n8n webhook client
+# n8n webhook client (send order image, receive JSON)
 requests==2.34.2
 
-# Environment config
+# Environment config (.env)
 python-dotenv==1.2.2

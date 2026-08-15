@@ -5,7 +5,7 @@ class FakturamaApp:
     def connect(self) -> FakturamaWindow:
         self.window = auto.WindowControl(
             searchDepth=1,
-            RegexName=r"^Fakturama - .*",
+            RegexName=r"^Fakturama.*",
         )
 
         if not self.window.Exists(5):

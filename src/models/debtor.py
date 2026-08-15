@@ -34,13 +34,6 @@ class Debtor:
             f"{self.company} {self.zip_code} {self.city}"
         )
 
-    def payment_label(self) -> str:
-        return (
-            self.payment_method.name
-            if self.payment_method
-            else DEFAULT_PAYMENT
-        )
-
     def resolve_fields(self) -> dict[str, Any]:
         return {
             "Company": self.company,
@@ -62,6 +55,6 @@ class Debtor:
             "Miscellaneous": {
                 "Alias name": self.alias,
                 "Net or Gross": "Net",
-                "Payment": self.payment_label(),
+                "Payment": self.payment_method.description,
             },
         }
