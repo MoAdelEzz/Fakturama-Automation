@@ -37,11 +37,11 @@ class N8NClient:
         response.raise_for_status()
 
         data = response.json()
-
-        if "order_created_at" not in data:
+        
+        if data.get("success") == False or data.get("order") is None:
             self.handleError(data.get("error"))
-
-        return Order.from_json(data)
+        else:
+            return Order.from_json(data.get("order"))
             
     @staticmethod
     def _mime_type(path: Path) -> str:
